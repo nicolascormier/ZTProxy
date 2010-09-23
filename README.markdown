@@ -3,7 +3,8 @@ ZTProxy
 =======
 
 ZTProxy is a small helper to access the ZooTool API within an objective-C app.
-ZTProxy requires [json-framework]: http://github.com/stig/json-framework
+
+ZTProxy requires [json-framework](http://github.com/stig/json-framework)
 
 Example
 -------
