@@ -10,7 +10,9 @@ Example
 -------
 
 		ZTProxy* prox = [ZTProxy defaultProxy];
-		NSURLCredential* cred = [NSURLCredential credentialWithUser:@"XXX" password:@"XXX" persistence:NSURLCredentialPersistencePermanent];
+		NSURLCredential* cred = [NSURLCredential credentialWithUser:@"XXX" 
+                                                       password:@"XXX" 
+                                                    persistence:NSURLCredentialPersistencePermanent];
 		[prox useCredential:cred];
 		NSLog(@"%@", [prox userFollowersWithUsername:@"bastian" withRange:NSMakeRange(1, 2)]);
 
