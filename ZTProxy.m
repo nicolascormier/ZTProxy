@@ -9,6 +9,8 @@
 #import "ZTProxy.h"
 #import "JSON.h"
 #import "NSString+SHA1.h"
+#import "ZTUser.h"
+#import "ZTItem.h"
 
 
 #pragma mark -
@@ -33,13 +35,14 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 @interface ZTProxy ()
 
 @property (nonatomic, copy) NSString* apiKey;
-@property (nonatomic, copy) NSString* username; // authenticated username - nil if authentication failed or crendentials haven't been provided
-@property (nonatomic, retain) SBJsonParser* jsonParser;
+@property (nonatomic, copy) NSString* username;
+@property (nonatomic, retain) SBJsonParser* jsonParser; // retain since the instance is internal
 
 @end
 
 #define isUserAuthenticated() self.username != nil ? @"true" : @"false"
-
+#define isDictionaryOrNil(o) [o isKindOfClass:[NSDictionary class]] ? o : nil
+#define isArrayOrNil(o) [o isKindOfClass:[NSArray class]] ? o : nil
 
 #pragma mark -
 #pragma mark ••• implementation •••
@@ -124,7 +127,17 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
     return nil;
   }
   id object = [self.jsonParser objectWithString:content];
-  if (!object) NSLog(@"ZTProxy parsing failed (%s) - %@ %@", __PRETTY_FUNCTION__, self.jsonParser.errorTrace, content);
+  // error checks
+  if (!object) 
+  {
+    NSLog(@"ZTProxy parsing failed (%s) - %@ %@", __PRETTY_FUNCTION__, self.jsonParser.errorTrace, content);
+  }
+  else if ([object respondsToSelector:@selector(valueForKey:)] && [[object valueForKey:@"username"] isEqual:@"error"])
+  {
+    NSLog(@"ZTProxy parsing failed (%s) - %@ %@", __PRETTY_FUNCTION__, [object valueForKey:@"msg"], content);
+    return nil;
+  }
+  // we should be good here - jsonParser only provides us with NSArray or NSDictionary
   return object;
 }
 
@@ -136,64 +149,106 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   return [object respondsToSelector:@selector(valueForKey:)] && [[object valueForKey:@"username"] isEqual:self.username]; // validate server reponse  
 }
 
-- (NSDictionary*) userWithUsername:(NSString*)username
+- (ZTUser*) userWithUsername:(NSString*)username
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userWithUsernameURL, self.apiKey, username]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_
+  NSDictionary* userDic = isDictionaryOrNil([self parseJSONAtURL:url]);
+  if (userDic) return [[[ZTUser alloc] initWithDictionary:userDic] autorelease];
+  return nil;
+}
+
+- (ZTItem*) itemWithUID:(NSString*)uid
+{
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_itemWithUIDURL, self.apiKey, uid]];
+  NSDictionary* itemDic = isDictionaryOrNil([self parseJSONAtURL:url]);
+  if (itemDic) return [[[ZTItem alloc] initWithDictionary:itemDic] autorelease];
+  return nil;  
+}
+
+- (NSArray*) usersWithURL:(NSURL*)url
+{
+  NSArray* users = isArrayOrNil([self parseJSONAtURL:url]);
+  if (users)
+  {
+    NSMutableArray* ret = [NSMutableArray arrayWithCapacity:[users count]];
+    for (NSDictionary* userDic in users)
+    {
+      if (isDictionaryOrNil(userDic))
+      {
+        ZTUser* user = [[[ZTUser alloc] initWithDictionary:userDic] autorelease];
+        [ret addObject:user];
+      }
+    }
+    return ret;
+  }
+  return nil;
+}
+
+- (NSArray*) itemsWithURL:(NSURL*)url
+{
+  NSArray* items = isArrayOrNil([self parseJSONAtURL:url]);
+  if (items)
+  {
+    NSMutableArray* ret = [NSMutableArray arrayWithCapacity:[items count]];
+    for (NSDictionary* itemDic in items)
+    {
+      if (isDictionaryOrNil(itemDic))
+      {
+        ZTItem* item = [[[ZTItem alloc] initWithDictionary:itemDic] autorelease];
+        [ret addObject:item];
+      }
+    }
+    return ret;
+  }
+  return nil;
 }
 
 - (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userFriendsWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_  
+  return [self usersWithURL:url];
 }
 
 - (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userFollowersWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_    
+  return [self usersWithURL:url];
 }
 
 - (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userItemsWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_      
+  return [self itemsWithURL:url];
 }
 
 - (NSArray*) latestAddedItemsWithRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_lastAddedItemsURL, self.apiKey, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_        
+  return [self itemsWithURL:url];
 }
 
 - (NSArray*) todayPopularItemsWithRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_todayPopularItemsURL, self.apiKey, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_        
+  return [self itemsWithURL:url];
 }
 
 - (NSArray*) thisWeekPopularItemsWithRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_thisWeekPopularItemsURL, self.apiKey, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_        
+  return [self itemsWithURL:url];
 }
 
 - (NSArray*) thisMonthPopularItemsWithRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_thisMonthPopularItemsURL, self.apiKey, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_        
+  return [self itemsWithURL:url];
 }
 
 - (NSArray*) popularItemsWithRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_popularItemsURL, self.apiKey, range.location, range.length]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_          
-}
-
-- (NSDictionary*) itemWithUID:(NSString*)uid
-{
-  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_itemWithUIDURL, self.apiKey, uid]];
-  return [self parseJSONAtURL:url]; // TODO - AssertCast_          
+  return [self itemsWithURL:url];
 }
 
 @end

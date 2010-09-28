@@ -7,6 +7,10 @@
 //
 
 
+@class ZTUser;
+@class ZTItem;
+
+
 @interface ZTProxy : NSObject {
 }
 
@@ -20,15 +24,15 @@
 - (BOOL) tryToReuseCredentialForUsername:(NSString*)username;
 - (BOOL) validateCredentialAgainstServer;
 
-- (NSDictionary*) userWithUsername:(NSString*)username;
-- (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range; // array of dictionnary
-- (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range; // array of dictionnary
-- (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of dictionnary
-- (NSArray*) latestAddedItemsWithRange:(NSRange)range; // array of dictionnary
-- (NSArray*) todayPopularItemsWithRange:(NSRange)range; // array of dictionnary
-- (NSArray*) thisWeekPopularItemsWithRange:(NSRange)range; // array of dictionnary
-- (NSArray*) thisMonthPopularItemsWithRange:(NSRange)range; // array of dictionnary
-- (NSArray*) popularItemsWithRange:(NSRange)range; // array of dictionnary
-- (NSDictionary*) itemWithUID:(NSString*)uid;
+- (ZTUser*) userWithUsername:(NSString*)username;
+- (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
+- (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
+- (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) latestAddedItemsWithRange:(NSRange)range; // array of ZTItem
+- (NSArray*) todayPopularItemsWithRange:(NSRange)range; // array of ZTItem
+- (NSArray*) thisWeekPopularItemsWithRange:(NSRange)range; // array of ZTItem
+- (NSArray*) thisMonthPopularItemsWithRange:(NSRange)range; // array of ZTItem
+- (NSArray*) popularItemsWithRange:(NSRange)range; // array of ZTItem
+- (ZTItem*) itemWithUID:(NSString*)uid;
 
 @end
