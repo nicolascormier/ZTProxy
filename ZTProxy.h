@@ -19,9 +19,23 @@
 + (id) proxyWithAPIKey:(NSString*)apiKey;
 - (id) initWithAPIKey:(NSString*)apiKey;
 
+- (void) useCache:(BOOL)enableCache; // default YES
+
 - (void) doNotUseCredential; // default mode
-- (void) useCredential:(NSURLCredential*)credentials;
-- (BOOL) tryToReuseCredentialForUsername:(NSString*)username;
+
+// useCredential
+// set a credential to be used when querying zootool's server
+// this method does not validate provided credential
+// you should call validateCredentialAgainstServer after this call
+- (void) useCredential:(NSURLCredential*)credential; 
+          
+// tryToReuseCredentialForUsername
+// try to see if username has been used previously
+// if yes - try to reuse the credential
+// once again no validation here
+// you should call validateCredentialAgainstServer after this call
+- (BOOL) tryToReuseCredentialForUsername:(NSString*)username; 
+                                                              
 - (BOOL) validateCredentialAgainstServer;
 
 - (ZTUser*) userWithUsername:(NSString*)username;

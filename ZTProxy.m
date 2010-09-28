@@ -15,8 +15,24 @@
 
 #pragma mark -
 #pragma mark ••• constants •••
+
+// use zootool api webpage to generate a proper api key
+// this is required by zootool's api http://zootool.com/api/docs
 static NSString* ZT_defaultAPIKey = @"f7b6656c64750afaef371c0d382c6dfb"; // CHANGEME
+
+// you can choose to activate or desactivate caching
+// by default we cache the JSON's output of each query sent to ZTProxy
+// the following variable maxCacheSize is used to limitate the size of this cache
+// the strategy used behind this cache is simple and stupid and should be fixed
+// but it's good enough for now ^_^
+// we should probably cache ZT objects rather than the dictionaries and array
+// used to create those objects
+// once again for simplicity's sake it's good enough
+static unsigned maxCacheSize = 500; // size in number of elements
+
+// hardcoded url used to query zootool's api
 // not quite sexy but faster than building an URL from a dictionary for instance
+// once again it's good enough for now :-p
 static NSString* ZT_userWithUsernameURL = @"http://zootool.com/api/users/info/?apikey=%@&username=%@"; // args[2] : apikey, username 
 static NSString* ZT_userFriendsWithUsernameURL = @"http://zootool.com/api/users/friends/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
 static NSString* ZT_userFollowersWithUsernameURL = @"http://zootool.com/api/users/followers/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
@@ -37,19 +53,27 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 @property (nonatomic, copy) NSString* apiKey;
 @property (nonatomic, copy) NSString* username;
 @property (nonatomic, retain) SBJsonParser* jsonParser; // retain since the instance is internal
+@property (nonatomic, retain) NSMutableDictionary* cache;
+@property (nonatomic, assign) BOOL useCache;
+@property (nonatomic, assign) unsigned cacheSize; // in number of elements
+
+- (id) parseJSONAtURL:(NSURL*)url;
 
 @end
 
+// handy defines
 #define isUserAuthenticated() self.username != nil ? @"true" : @"false"
-#define isDictionaryOrNil(o) [o isKindOfClass:[NSDictionary class]] ? o : nil
-#define isArrayOrNil(o) [o isKindOfClass:[NSArray class]] ? o : nil
+#define isDictionaryOrNil(o) [o isKindOfClass:[NSDictionary class]] ? o : nil // this should be somewhere else...
+#define isArrayOrNil(o) [o isKindOfClass:[NSArray class]] ? o : nil // this should be somewhere else...
+
 
 #pragma mark -
 #pragma mark ••• implementation •••
 @implementation ZTProxy
 
 @synthesize apiKey=_apiKey, username=_username;
-@synthesize jsonParser=_jsonParser;
+@synthesize jsonParser=_jsonParser, cache=_cache;
+@synthesize useCache=_useCache, cacheSize=_cacheSize;
 
 + (NSURLProtectionSpace*) defaultProtectionSpace
 {
@@ -62,12 +86,15 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 
 - (void) dealloc
 {
+  // no KVO so we can use self.xxx = nil for releasing objects
   self.apiKey = nil;
   self.username = nil;
   self.jsonParser = nil;
+  self.cache = nil;
   [super dealloc];
 }
 
+// proxy's singleton bouh bouh bouh!
 static ZTProxy* ZT_defaultProxyInstance = nil;
 + (ZTProxy*) defaultProxy
 {
@@ -89,9 +116,12 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   {
     self.jsonParser = [[[SBJsonParser alloc] init] autorelease];
     self.apiKey = apiKey;
+    self.useCache = YES;
   }
   return self;
 }
+
+#pragma mark ••• credential •••
 
 - (void) doNotUseCredential
 {
@@ -117,8 +147,35 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   return YES;
 }
 
+- (BOOL) validateCredentialAgainstServer
+{
+  if (!self.username) return NO;
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_validateCredentials, self.apiKey, self.username]];
+  id object = [self parseJSONAtURL:url];
+  return [object respondsToSelector:@selector(valueForKey:)] && [[object valueForKey:@"username"] isEqual:self.username]; // validate server reponse  
+}
+
+#pragma mark ••• parsing and caching •••
+
+- (void) useCache:(BOOL)enableCache
+{
+  self.useCache = enableCache;
+  if (!enableCache)
+  {
+    // clear cache
+    [self.cache removeAllObjects];
+    self.cacheSize = 0;
+  }
+}
+
 - (id) parseJSONAtURL:(NSURL*)url
-{  
+{
+  if (self.useCache)
+  {
+    id object = [self.cache objectForKey:[url absoluteString]];
+    if (object) return object;
+  }
+  // fetch content at url
   NSError* error = nil;
   NSString* content = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&error];
   if (error)
@@ -138,16 +195,30 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
     return nil;
   }
   // we should be good here - jsonParser only provides us with NSArray or NSDictionary
+  if (self.useCache) // cache object if required
+  {
+    if (isDictionaryOrNil(object)) self.cacheSize += [object count];
+    else self.cacheSize += 1;
+    // quick and dirty cleanup if needed
+    if (self.cacheSize > maxCacheSize)
+    {
+      // dummy strategy - enumerate collection and remove objects using enumeration order
+      for (id key in self.cache)
+      {
+        id oldObject = [self.cache objectForKey:key];
+        if (isDictionaryOrNil(oldObject)) self.cacheSize -= [oldObject count];
+        else self.cacheSize -= 1;
+        [self.cache removeObjectForKey:key];
+        if (self.cacheSize <= maxCacheSize) break;
+      }
+    }
+    // add object in cache
+    [self.cache setObject:object forKey:[url absoluteString]];
+  }
   return object;
 }
 
-- (BOOL) validateCredentialAgainstServer
-{
-  if (!self.username) return NO;
-  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_validateCredentials, self.apiKey, self.username]];
-  id object = [self parseJSONAtURL:url];
-  return [object respondsToSelector:@selector(valueForKey:)] && [[object valueForKey:@"username"] isEqual:self.username]; // validate server reponse  
-}
+#pragma mark ••• queries •••
 
 - (ZTUser*) userWithUsername:(NSString*)username
 {
@@ -250,5 +321,7 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_popularItemsURL, self.apiKey, range.location, range.length]];
   return [self itemsWithURL:url];
 }
+
+
 
 @end
