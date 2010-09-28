@@ -14,14 +14,25 @@
 @interface ZTProxy : NSObject {
 }
 
+// defaultProxy
+// returns an app-wide global proxy object
 + (ZTProxy*) defaultProxy;
 
+// proxyWithAPIKey
+// create a new proxy object with a provided api key
+// object has been auto-released prior return
 + (id) proxyWithAPIKey:(NSString*)apiKey;
+
+// proxyWithAPIKey
+// create a new proxy object with a provided api key
 - (id) initWithAPIKey:(NSString*)apiKey;
 
 - (void) useCache:(BOOL)enableCache; // default YES
 
-- (void) doNotUseCredential; // default mode
+// doNotUseCredential
+// prevent ZTProxy from using a credential when querying zootool's server
+// this is the default mode
+- (void) doNotUseCredential;
 
 // useCredential
 // set a credential to be used when querying zootool's server
@@ -35,7 +46,9 @@
 // once again no validation here
 // you should call validateCredentialAgainstServer after this call
 - (BOOL) tryToReuseCredentialForUsername:(NSString*)username; 
-                                                              
+                        
+// validateCredentialAgainstServer
+// returns YES if the credential provided are valid
 - (BOOL) validateCredentialAgainstServer;
 
 - (ZTUser*) userWithUsername:(NSString*)username;
