@@ -15,9 +15,9 @@ Example
                                                        password:@"XXX" 
                                                     persistence:NSURLCredentialPersistencePermanent];
 		[prox useCredential:cred];
-    NSLog(@"%@", [prox userWithUsername:@"bastian"]);
-    NSLog(@"%@", [prox itemWithUID:@"ooq2k"]);
-    NSLog(@"%@", [prox userFriendsWithUsername:@"bastian" withRange:NSMakeRange(1, 2)]);
-    NSLog(@"%@", [prox popularItemsWithRange:NSMakeRange(1, 2)]);
+		NSLog(@"%@", [prox userWithUsername:@"bastian"]);
+		NSLog(@"%@", [prox itemWithUID:@"ooq2k"]);
+		NSLog(@"%@", [prox userFriendsWithUsername:@"bastian" withRange:NSMakeRange(1, 2)]);
+		NSLog(@"%@", [prox popularItemsWithRange:NSMakeRange(1, 2)]);
 
 
