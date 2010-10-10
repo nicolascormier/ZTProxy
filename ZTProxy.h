@@ -9,6 +9,7 @@
 
 @class ZTUser;
 @class ZTItem;
+@class ZTTag;
 
 
 @interface ZTProxy : NSObject {
@@ -55,6 +56,10 @@
 - (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
 - (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
 - (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userItemsWithUsername:(NSString*)username andTag:(NSString*)tag withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userItemsWithUsername:(NSString*)username andPack:(NSString*)pack withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userTagsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTTag
+- (NSArray*) userPacksWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTPack
 - (NSArray*) latestAddedItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) todayPopularItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) thisWeekPopularItemsWithRange:(NSRange)range; // array of ZTItem

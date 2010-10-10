@@ -11,6 +11,8 @@
 #import "NSString+SHA1.h"
 #import "ZTUser.h"
 #import "ZTItem.h"
+#import "ZTTag.h"
+#import "ZTPack.h"
 
 
 #pragma mark -
@@ -23,7 +25,8 @@ static NSString* ZT_defaultAPIKey = @"f7b6656c64750afaef371c0d382c6dfb"; // CHAN
 // you can choose to activate or desactivate caching
 // by default we cache the JSON's output of each query sent to ZTProxy
 // the following variable maxCacheSize is used to limitate the size of this cache
-// the strategy used behind this cache is simple and stupid and should be fixed
+// NSCache is used if available otherwise a quick and dirty cache's been implemented
+// the strategy used behind this Q&D cache is simple and stupid and should be fixed
 // but it's good enough for now ^_^
 // we should probably cache ZT objects rather than the dictionaries and array
 // used to create those objects
@@ -37,6 +40,10 @@ static NSString* ZT_userWithUsernameURL = @"http://zootool.com/api/users/info/?a
 static NSString* ZT_userFriendsWithUsernameURL = @"http://zootool.com/api/users/friends/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
 static NSString* ZT_userFollowersWithUsernameURL = @"http://zootool.com/api/users/followers/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
 static NSString* ZT_userItemsWithUsernameURL = @"http://zootool.com/api/users/items/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
+static NSString* ZT_userItemsWithUsernameAndPackURL = @"http://zootool.com/api/users/items/?apikey=%@&login=%@&username=%@&pack=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, pack, offset, limit
+static NSString* ZT_userItemsWithUsernameAndTagURL = @"http://zootool.com/api/users/items/?apikey=%@&login=%@&username=%@&tag=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, tag, offset, limit
+static NSString* ZT_userTagsWithUsernameURL = @"http://zootool.com/api/users/tags/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
+static NSString* ZT_userPacksWithUsernameURL = @"http://zootool.com/api/users/packs/?apikey=%@&login=%@&username=%@&offset=%d&limit=%d"; // args[3] : apikey, login, username, offset, limit
 static NSString* ZT_validateCredentials = @"http://zootool.com/api/users/validate?apikey=%@&login=true&username=%@&offset=%d&limit=%d"; // args[2] : apikey, username, offset, limit
 static NSString* ZT_lastAddedItemsURL = @"http://zootool.com/api/users/items/?apikey=%@&offset=%d&limit=%d"; // args[1] : apikey, offset, limit
 static NSString* ZT_todayPopularItemsURL = @"http://zootool.com/api/items/popular/?apikey=%@&type=today&offset=%d&limit=%d"; // args[1] : apikey, offset, limit
@@ -53,18 +60,23 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 @property (nonatomic, copy) NSString* apiKey;
 @property (nonatomic, copy) NSString* username;
 @property (nonatomic, retain) SBJsonParser* jsonParser; // retain since the instance is internal
+
+#if MAC_OS_X_VERSION_10_6 <= MAC_OS_X_VERSION_MAX_ALLOWED
+@property (nonatomic, retain) NSCache* cache;
+#else
 @property (nonatomic, retain) NSMutableDictionary* cache;
+@property (nonatomic, assign) unsigned cacheSize; // current size in number of elements
+#endif
 @property (nonatomic, assign) BOOL useCache;
-@property (nonatomic, assign) unsigned cacheSize; // in number of elements
 
 - (id) parseJSONAtURL:(NSURL*)url;
 
 @end
 
-// handy defines
 #define isUserAuthenticated() self.username != nil ? @"true" : @"false"
-#define isDictionaryOrNil(o) [o isKindOfClass:[NSDictionary class]] ? o : nil // this should be somewhere else...
-#define isArrayOrNil(o) [o isKindOfClass:[NSArray class]] ? o : nil // this should be somewhere else...
+
+static inline id isDictionaryOrNil(id obj) { return [obj isKindOfClass:[NSDictionary class]] ? obj : nil; }
+static inline id isArrayOrNil(id obj) { return [obj isKindOfClass:[NSArray class]] ? obj : nil; }
 
 
 #pragma mark -
@@ -73,7 +85,11 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 
 @synthesize apiKey=_apiKey, username=_username;
 @synthesize jsonParser=_jsonParser, cache=_cache;
-@synthesize useCache=_useCache, cacheSize=_cacheSize;
+@synthesize useCache=_useCache;
+#if MAC_OS_X_VERSION_10_6 <= MAC_OS_X_VERSION_MAX_ALLOWED
+#else
+@synthesize cacheSize=_cacheSize;
+#endif
 
 + (NSURLProtectionSpace*) defaultProtectionSpace
 {
@@ -98,7 +114,7 @@ static NSString* ZT_itemWithUIDURL = @"http://zootool.com/api/items/info/?apikey
 static ZTProxy* ZT_defaultProxyInstance = nil;
 + (ZTProxy*) defaultProxy
 {
-  @synchronized(self)
+  //@synchronized(self) // not needed as ZTProxy is not thread safe anyway
   {
     if (!ZT_defaultProxyInstance) ZT_defaultProxyInstance = [[[self class] alloc] initWithAPIKey:ZT_defaultAPIKey];
   }
@@ -117,6 +133,12 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
     self.jsonParser = [[[SBJsonParser alloc] init] autorelease];
     self.apiKey = apiKey;
     self.useCache = YES;
+#if MAC_OS_X_VERSION_10_6 <= MAC_OS_X_VERSION_MAX_ALLOWED
+    self.cache = [[NSCache alloc] init];
+    self.cache.countLimit = maxCacheSize;
+#else
+    self.cache = [[NSDictionary alloc] init];
+#endif
   }
   return self;
 }
@@ -164,12 +186,17 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   {
     // clear cache
     [self.cache removeAllObjects];
+#if MAC_OS_X_VERSION_10_6 <= MAC_OS_X_VERSION_MAX_ALLOWED
+    // nothing special here
+#else
     self.cacheSize = 0;
+#endif
   }
 }
 
 - (id) parseJSONAtURL:(NSURL*)url
 {
+  CSDebugLog(@"ZT API %@", url);
   if (self.useCache)
   {
     id object = [self.cache objectForKey:[url absoluteString]];
@@ -197,6 +224,9 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   // we should be good here - jsonParser only provides us with NSArray or NSDictionary
   if (self.useCache) // cache object if required
   {
+#if MAC_OS_X_VERSION_10_6 <= MAC_OS_X_VERSION_MAX_ALLOWED
+    [self.cache setObject:object forKey:[url absoluteString] cost:[content length]];   
+#else
     if (isDictionaryOrNil(object)) self.cacheSize += [object count];
     else self.cacheSize += 1;
     // quick and dirty cleanup if needed
@@ -214,6 +244,7 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
     }
     // add object in cache
     [self.cache setObject:object forKey:[url absoluteString]];
+#endif
   }
   return object;
 }
@@ -274,6 +305,44 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   return nil;
 }
 
+- (NSArray*) tagsWithURL:(NSURL*)url
+{
+  NSArray* items = isArrayOrNil([self parseJSONAtURL:url]);
+  if (items)
+  {
+    NSMutableArray* ret = [NSMutableArray arrayWithCapacity:[items count]];
+    for (NSDictionary* itemDic in items)
+    {
+      if (isDictionaryOrNil(itemDic))
+      {
+        ZTTag* tag = [[[ZTTag alloc] initWithDictionary:itemDic] autorelease];
+        [ret addObject:tag];
+      }
+    }
+    return ret;
+  }
+  return nil;
+}
+
+- (NSArray*) packsWithURL:(NSURL*)url
+{
+  NSArray* items = isArrayOrNil([self parseJSONAtURL:url]);
+  if (items)
+  {
+    NSMutableArray* ret = [NSMutableArray arrayWithCapacity:[items count]];
+    for (NSDictionary* itemDic in items)
+    {
+      if (isDictionaryOrNil(itemDic))
+      {
+        ZTPack* pack = [[[ZTPack alloc] initWithDictionary:itemDic] autorelease];
+        [ret addObject:pack];
+      }
+    }
+    return ret;
+  }
+  return nil;
+}
+
 - (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userFriendsWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
@@ -290,6 +359,30 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userItemsWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
   return [self itemsWithURL:url];
+}
+
+- (NSArray*) userItemsWithUsername:(NSString*)username andTag:(NSString*)tag withRange:(NSRange)range
+{
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userItemsWithUsernameAndTagURL, self.apiKey, isUserAuthenticated(), username, tag, range.location, range.length]];
+  return [self itemsWithURL:url];  
+}
+
+- (NSArray*) userItemsWithUsername:(NSString*)username andPack:(NSString*)pack withRange:(NSRange)range
+{  
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userItemsWithUsernameAndPackURL, self.apiKey, isUserAuthenticated(), username, pack, range.location, range.length]];
+  return [self itemsWithURL:url];  
+}
+
+- (NSArray*) userTagsWithUsername:(NSString*)username withRange:(NSRange)range
+{
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userTagsWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
+  return [self tagsWithURL:url];
+}
+
+- (NSArray*) userPacksWithUsername:(NSString*)username withRange:(NSRange)range
+{
+  NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_userPacksWithUsernameURL, self.apiKey, isUserAuthenticated(), username, range.location, range.length]];
+  return [self packsWithURL:url];
 }
 
 - (NSArray*) latestAddedItemsWithRange:(NSRange)range
@@ -321,7 +414,5 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_popularItemsURL, self.apiKey, range.location, range.length]];
   return [self itemsWithURL:url];
 }
-
-
 
 @end
