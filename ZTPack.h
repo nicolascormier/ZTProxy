@@ -6,15 +6,15 @@
 //  Copyright 2010 Nicolas CORMIER. All rights reserved.
 //
 
+#import "ZTDataObject.h"
 
-@interface ZTPack : NSObject {
+
+@interface ZTPack : ZTDataObject<ZTDataObject> {
 
 }
-
-- (id) initWithDictionary:(NSDictionary*)dict; // dictionary string->string
-- (NSDictionary*) dictionary; // dictionary string->string
 
 @property (nonatomic, copy) NSString* pid;
 @property (nonatomic, copy) NSString* name;
 @property (nonatomic, copy) NSString* iconid;
+
 @end

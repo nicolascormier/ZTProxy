@@ -11,16 +11,18 @@
 
 @implementation ZTItem
 
-@synthesize uid, title, url, views, likes, permalink, tinyurl, thumbnail, image, referer, desc, tags, added;
+@synthesize uid, title, url, views, likes, comments, permalink, tinyurl, thumbnail, image, referer, desc, tags, added, inthezoo;
 
 - (void) dealloc
 {
-  // should be release... KVC/KVO...
+  // should be released... KVC/KVO...
   self.uid = nil;
   self.title = nil;
   self.desc = nil;
   self.views = nil;
   self.likes = nil;
+  self.comments = nil;  
+  self.inthezoo = nil;   
   self.url = nil;
   self.permalink = nil;
   self.tinyurl = nil;
@@ -44,6 +46,8 @@
     self.desc = [[dict objectForKey:@"description"] description];    
     self.views = [formatter numberFromString:[[dict objectForKey:@"views"] description]];
     self.likes = [formatter numberFromString:[[dict objectForKey:@"likes"] description]];
+    self.comments = [formatter numberFromString:[[dict objectForKey:@"comments"] description]];
+    self.inthezoo = [formatter numberFromString:[[dict objectForKey:@"inthezoo"] description]];
     self.url = [NSURL URLWithString:[[dict objectForKey:@"url"] description]];
     self.permalink = [NSURL URLWithString:[[dict objectForKey:@"permalink"] description]];
     self.tinyurl = [NSURL URLWithString:[[dict objectForKey:@"tinyurl"] description]];
@@ -65,6 +69,8 @@
   if (self.desc) [ret setObject:self.desc forKey:@"description"];  
   if (self.views) [ret setObject:[self.views stringValue] forKey:@"views"];
   if (self.likes) [ret setObject:[self.likes stringValue] forKey:@"likes"];                      
+  if (self.comments) [ret setObject:[self.comments stringValue] forKey:@"comments"];                      
+  if (self.inthezoo) [ret setObject:[self.inthezoo stringValue] forKey:@"inthezoo"];                      
   if (self.url) [ret setObject:[self.url absoluteString] forKey:@"url"];
   if (self.permalink) [ret setObject:[self.permalink absoluteString] forKey:@"permalink"];
   if (self.tinyurl) [ret setObject:[self.tinyurl absoluteString] forKey:@"tinyurl"];
@@ -72,7 +78,7 @@
   if (self.image) [ret setObject:[self.image absoluteString] forKey:@"image"];  
   if (self.referer) [ret setObject:[self.referer absoluteString] forKey:@"referer"];    
   if (self.tags) [ret setObject:self.tags forKey:@"tags"]; 
-  if (self.added) [ret setObject:[NSString stringWithFormat:@"%d", [self.added timeIntervalSince1970]] forKey:@"tags"];  
+  if (self.added) [ret setObject:[NSString stringWithFormat:@"%d", [self.added timeIntervalSince1970]] forKey:@"added"];  
   return ret;
 }
 

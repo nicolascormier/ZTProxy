@@ -6,17 +6,23 @@
 //  Copyright 2010 Nicolas CORMIER. All rights reserved.
 //
 
+#import "ZTDataObject.h"
 
-@interface ZTUser : NSObject {
+
+@interface ZTUser : ZTDataObject<ZTDataObject> {
 }
-
-- (id) initWithDictionary:(NSDictionary*)dict; // dictionary string->string
-- (NSDictionary*) dictionary; // dictionary string->string
-
 
 @property (nonatomic, copy) NSString* username;
 @property (nonatomic, copy) NSString* email;
+@property (nonatomic, copy) NSString* location;
 @property (nonatomic, copy) NSURL* website;
 @property (nonatomic, copy) NSURL* avatar;
+@property (nonatomic, copy) NSURL* profile;
+@property (nonatomic, copy) NSURL* tinyurl;
+@property (nonatomic, copy) NSArray* elsewhere;
+@property (nonatomic, copy) NSDate* added;
+@property (nonatomic, copy) NSNumber* entries;
+@property (nonatomic, copy) NSNumber* following;
+@property (nonatomic, copy) NSNumber* followers;
 
 @end

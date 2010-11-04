@@ -6,13 +6,12 @@
 //  Copyright 2010 Nicolas CORMIER. All rights reserved.
 //
 
+#import "ZTDataObject.h"
 
-@interface ZTTag : NSObject {
+
+@interface ZTTag : ZTDataObject<ZTDataObject> {
 
 }
-
-- (id) initWithDictionary:(NSDictionary*)dict; // dictionary string->string
-- (NSDictionary*) dictionary; // dictionary string->string
 
 @property (nonatomic, copy) NSString* tid;
 @property (nonatomic, copy) NSString* name;

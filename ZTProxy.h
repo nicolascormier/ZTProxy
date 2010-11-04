@@ -9,9 +9,11 @@
 
 @class ZTUser;
 @class ZTItem;
-@class ZTTag;
 
 
+// ZTProxy
+// ZTProxy is a small helper to access the ZooTool API
+// NB: ZTProxy objects are NOT THREAD SAFE!!
 @interface ZTProxy : NSObject {
 }
 
@@ -28,7 +30,9 @@
 // create a new proxy object with a provided api key
 - (id) initWithAPIKey:(NSString*)apiKey;
 
-- (void) useCache:(BOOL)enableCache; // default YES
+// useCache
+// activate or desactivate caching mechanism
+- (void) useCache:(BOOL)enableCache; // default to NO
 
 // doNotUseCredential
 // prevent ZTProxy from using a credential when querying zootool's server
@@ -55,16 +59,26 @@
 - (ZTUser*) userWithUsername:(NSString*)username;
 - (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
 - (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
-- (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
-- (NSArray*) userItemsWithUsername:(NSString*)username andTag:(NSString*)tag withRange:(NSRange)range; // array of ZTItem
-- (NSArray*) userItemsWithUsername:(NSString*)username andPack:(NSString*)pack withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) itemLikesWithUID:(NSString*)uid withRange:(NSRange)range; // array of ZTUser
+
 - (NSArray*) userTagsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTTag
 - (NSArray*) userPacksWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTPack
+
+- (ZTItem*) itemWithUID:(NSString*)uid;
+- (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userItemsWithUsername:(NSString*)username andTagID:(NSString*)tagid withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userItemsWithUsername:(NSString*)username andPackID:(NSString*)packid withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) itemsWithTag:(NSString*)tag withRange:(NSRange)range; // array of ZTItem
 - (NSArray*) latestAddedItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) todayPopularItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) thisWeekPopularItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) thisMonthPopularItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) popularItemsWithRange:(NSRange)range; // array of ZTItem
-- (ZTItem*) itemWithUID:(NSString*)uid;
+
+- (NSArray*) commentsWithItemUID:(NSString*)uid withRange:(NSRange)range; // array of ZTComment
+
+- (BOOL) followUserWithUsername:(NSString*)username; // need to be authenticated
+- (BOOL) unfollowUserWithUsername:(NSString*)username; // need to be authenticated
+- (BOOL) isUserWithUsername:(NSString*)usernameA followingUserWithUsername:(NSString*)usernameB;
 
 @end
