@@ -16,4 +16,8 @@
 @property (nonatomic, copy) NSString* tid;
 @property (nonatomic, copy) NSString* name;
 
+@property (nonatomic, copy) NSNumber* recent;
+@property (nonatomic, copy) NSNumber* fav;
+@property (nonatomic, copy) NSNumber* suggestion;
+
 @end

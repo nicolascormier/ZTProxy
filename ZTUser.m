@@ -11,14 +11,16 @@
 
 @implementation ZTUser
 
-@synthesize username, email, location, website, avatar, profile, tinyurl, elsewhere, added;
-@synthesize entries, following, followers;
+@synthesize username, email, location, bio, website, avatar, profile, tinyurl, elsewhere, added;
+@synthesize name, entries, following, followers;
 
 - (void) dealloc
 {
   self.username = nil;
+  self.name = nil;  
   self.email = nil;
   self.location = nil; 
+  self.bio = nil;  
   self.website = nil;
   self.avatar = nil;
   self.profile = nil;
@@ -38,8 +40,10 @@
     NSNumberFormatter* formatter = [[[NSNumberFormatter alloc] init] autorelease];
     [formatter setNumberStyle:NSNumberFormatterDecimalStyle];    
     self.username = [[dict objectForKey:@"username"] description];
+    self.name = [[dict objectForKey:@"name"] description];
     self.email = [[dict objectForKey:@"email"] description];
     self.location = [[dict objectForKey:@"location"] description]; 
+    self.bio = [[dict objectForKey:@"bio"] description]; 
     self.website = [NSURL URLWithString:[[dict objectForKey:@"website"] description]];
     self.avatar = [NSURL URLWithString:[[dict objectForKey:@"avatar"] description]];
     self.profile = [NSURL URLWithString:[[dict objectForKey:@"profile"] description]];
@@ -58,8 +62,10 @@
 {
   NSMutableDictionary* ret = [NSMutableDictionary dictionary];
   if (self.username) [ret setObject:self.username forKey:@"username"];
+  if (self.name) [ret setObject:self.name forKey:@"name"];
   if (self.email) [ret setObject:self.email forKey:@"email"];
   if (self.location) [ret setObject:self.location forKey:@"location"];  
+  if (self.bio) [ret setObject:self.bio forKey:@"bio"];  
   if (self.website) [ret setObject:[self.website absoluteString] forKey:@"website"];
   if (self.avatar) [ret setObject:[self.avatar absoluteString] forKey:@"avatar"];
   if (self.profile) [ret setObject:[self.profile absoluteString] forKey:@"profile"]; 

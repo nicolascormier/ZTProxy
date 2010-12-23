@@ -11,18 +11,22 @@
 
 @implementation ZTItem
 
-@synthesize uid, title, url, views, likes, comments, permalink, tinyurl, thumbnail, image, referer, desc, tags, added, inthezoo;
+@synthesize uid, title, type, url, views, likes, comments, permalink, tinyurl;
+@synthesize thumbnail, image, referer, desc, tags, added, inthezoo;
+@synthesize public;
 
 - (void) dealloc
 {
   // should be released... KVC/KVO...
   self.uid = nil;
   self.title = nil;
+  self.type = nil;  
   self.desc = nil;
   self.views = nil;
   self.likes = nil;
   self.comments = nil;  
   self.inthezoo = nil;   
+  self.public = nil;  
   self.url = nil;
   self.permalink = nil;
   self.tinyurl = nil;
@@ -43,11 +47,13 @@
     [formatter setNumberStyle:NSNumberFormatterDecimalStyle];
     self.uid = [[dict objectForKey:@"uid"] description];
     self.title = [[dict objectForKey:@"title"] description];
+    self.type = [[dict objectForKey:@"type"] description];    
     self.desc = [[dict objectForKey:@"description"] description];    
     self.views = [formatter numberFromString:[[dict objectForKey:@"views"] description]];
     self.likes = [formatter numberFromString:[[dict objectForKey:@"likes"] description]];
     self.comments = [formatter numberFromString:[[dict objectForKey:@"comments"] description]];
     self.inthezoo = [formatter numberFromString:[[dict objectForKey:@"inthezoo"] description]];
+    self.public = [formatter numberFromString:[[dict objectForKey:@"public"] description]];
     self.url = [NSURL URLWithString:[[dict objectForKey:@"url"] description]];
     self.permalink = [NSURL URLWithString:[[dict objectForKey:@"permalink"] description]];
     self.tinyurl = [NSURL URLWithString:[[dict objectForKey:@"tinyurl"] description]];
@@ -66,11 +72,13 @@
   NSMutableDictionary* ret = [NSMutableDictionary dictionary];
   if (self.uid) [ret setObject:self.uid forKey:@"uid"];
   if (self.title) [ret setObject:self.title forKey:@"title"];
+  if (self.type) [ret setObject:self.title forKey:@"type"];  
   if (self.desc) [ret setObject:self.desc forKey:@"description"];  
   if (self.views) [ret setObject:[self.views stringValue] forKey:@"views"];
   if (self.likes) [ret setObject:[self.likes stringValue] forKey:@"likes"];                      
   if (self.comments) [ret setObject:[self.comments stringValue] forKey:@"comments"];                      
   if (self.inthezoo) [ret setObject:[self.inthezoo stringValue] forKey:@"inthezoo"];                      
+  if (self.public) [ret setObject:[self.public stringValue] forKey:@"public"];                      
   if (self.url) [ret setObject:[self.url absoluteString] forKey:@"url"];
   if (self.permalink) [ret setObject:[self.permalink absoluteString] forKey:@"permalink"];
   if (self.tinyurl) [ret setObject:[self.tinyurl absoluteString] forKey:@"tinyurl"];

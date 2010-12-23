@@ -10,6 +10,7 @@
 
 
 @implementation ZTDataObject
+@synthesize tag;
 
 - (id) initWithDictionary:(NSDictionary*)dict
 {

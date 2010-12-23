@@ -13,8 +13,10 @@
 }
 
 @property (nonatomic, copy) NSString* username;
+@property (nonatomic, copy) NSString* name;
 @property (nonatomic, copy) NSString* email;
 @property (nonatomic, copy) NSString* location;
+@property (nonatomic, copy) NSString* bio;
 @property (nonatomic, copy) NSURL* website;
 @property (nonatomic, copy) NSURL* avatar;
 @property (nonatomic, copy) NSURL* profile;

@@ -21,4 +21,6 @@
 @interface ZTDataObject : NSObject<NSCopying, ZTDataObject> {
 }
 
+@property (nonatomic, assign) NSInteger tag; // programmer defined tag (similar to UIView's tag)
+
 @end

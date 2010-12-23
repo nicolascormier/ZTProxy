@@ -17,6 +17,7 @@
 {
   self.pid = nil;
   self.name = nil;
+  self.iconid = nil;
   [super dealloc];
 }
 

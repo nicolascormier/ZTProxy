@@ -16,11 +16,13 @@
 @property (nonatomic, copy) NSString* uid;
 @property (nonatomic, copy) NSString* title;
 @property (nonatomic, copy) NSString* desc;
+@property (nonatomic, copy) NSString* type;
 @property (nonatomic, copy) NSURL* url;
 @property (nonatomic, copy) NSNumber* views;
 @property (nonatomic, copy) NSNumber* likes;
 @property (nonatomic, copy) NSNumber* comments;
 @property (nonatomic, copy) NSNumber* inthezoo;
+@property (nonatomic, copy) NSNumber* public;
 @property (nonatomic, copy) NSURL* permalink;
 @property (nonatomic, copy) NSURL* tinyurl;
 @property (nonatomic, copy) NSURL* thumbnail;

@@ -17,6 +17,12 @@
 @interface ZTProxy : NSObject {
 }
 
+@property (nonatomic, retain) NSString* lastServerMessage; // TODO: this is rubbish...
+
+// isAPIServerDown
+// returns YES if the server is reachable
+@property (nonatomic, assign, getter=isZooDown) BOOL zooDown;
+
 // defaultProxy
 // returns an app-wide global proxy object
 + (ZTProxy*) defaultProxy;
@@ -56,18 +62,28 @@
 // returns YES if the credential provided are valid
 - (BOOL) validateCredentialAgainstServer;
 
+- (BOOL) createAccountWithUsername:(NSString*)username email:(NSString*)email andPassword:(NSString*)password;
+
 - (ZTUser*) userWithUsername:(NSString*)username;
 - (NSArray*) userFriendsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
 - (NSArray*) userFollowersWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTUser
 - (NSArray*) itemLikesWithUID:(NSString*)uid withRange:(NSRange)range; // array of ZTUser
+- (NSArray*) activeUsersWithRange:(NSRange)range; // array of ZTUser
+- (NSArray*) popularUsersWithRange:(NSRange)range; // array of ZTUser
+- (NSArray*) newUsersWithRange:(NSRange)range; // array of ZTUser
+- (NSArray*) featuredUsersWithRange:(NSRange)range; // array of ZTUser
 
 - (NSArray*) userTagsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTTag
+- (NSArray*) userRecentTagsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTTag
+- (NSArray*) userFavTagsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTTag
+
 - (NSArray*) userPacksWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTPack
 
 - (ZTItem*) itemWithUID:(NSString*)uid;
 - (NSArray*) userItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
 - (NSArray*) userItemsWithUsername:(NSString*)username andTagID:(NSString*)tagid withRange:(NSRange)range; // array of ZTItem
 - (NSArray*) userItemsWithUsername:(NSString*)username andPackID:(NSString*)packid withRange:(NSRange)range; // array of ZTItem
+- (NSArray*) userFollowingItemsWithUsername:(NSString*)username withRange:(NSRange)range; // array of ZTItem
 - (NSArray*) itemsWithTag:(NSString*)tag withRange:(NSRange)range; // array of ZTItem
 - (NSArray*) latestAddedItemsWithRange:(NSRange)range; // array of ZTItem
 - (NSArray*) todayPopularItemsWithRange:(NSRange)range; // array of ZTItem
@@ -80,5 +96,16 @@
 - (BOOL) followUserWithUsername:(NSString*)username; // need to be authenticated
 - (BOOL) unfollowUserWithUsername:(NSString*)username; // need to be authenticated
 - (BOOL) isUserWithUsername:(NSString*)usernameA followingUserWithUsername:(NSString*)usernameB;
+
+- (BOOL) likeItem:(ZTItem*)item; // need to be authenticated
+- (BOOL) likeItem:(ZTItem*)item keepItPrivate:(BOOL)priv addToPacks:(NSArray*)packs; // need to be authenticated
+- (BOOL) unlikeItemWithUID:(NSString*)uid; // need to be authenticated
+
+- (BOOL) postComment:(NSString*)comment onItemWithUID:(NSString*)uid; // need to be authenticated
+
+- (BOOL) editProfileInfo:(NSDictionary*)values; // need to be authenticated
+- (BOOL) editProfilePicture:(UIImage*)image; // need to be authenticated
+
+- (BOOL) flagItemWithUID:(NSString*)uid;
 
 @end
