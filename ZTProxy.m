@@ -80,7 +80,7 @@ static NSString* ZT_flagItemWithUIDURL = @"http://"ZTProxyServerHost@"/api/items
 @property (nonatomic, copy) NSString* username;
 @property (nonatomic, retain) SBJsonParser* jsonParser; // retain since the instance is internal
 
-@property (nonatomic, assign) NSCache* cache; // weak link - CHANGEME to copy
+@property (nonatomic, assign) NSCache* cache; // weak link - CHANGEME to retain
 @property (nonatomic, assign) BOOL useCache;
 
 @property (nonatomic, retain) APReachability* reachability;
@@ -162,7 +162,7 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
     self.apiKey = apiKey;
 
     self.useCache = useCacheByDefault;
-    self.cache = [[ZTGlobals mainGlobals] jsonCache]; // CHANGEME to [[NSCache alloc] init]
+    self.cache = [[ZTGlobals mainGlobals] jsonCache]; // CHANGEME to [[[NSCache alloc] init] autorelease]
     
     
     // register to reachibility notifications
@@ -206,7 +206,7 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
 {
   if (!self.username) return NO;
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_validateCredentials, self.apiKey, self.username]];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] && [[[object valueForKey:@"username"] lowercaseString] isEqual:[self.username lowercaseString]]; // validate server reponse  
 }
 
@@ -575,28 +575,28 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
 - (BOOL) createAccountWithUsername:(NSString*)username email:(NSString*)email andPassword:(NSString*)password
 {  
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_createAccountWithUsernameEmailAndPasswordURL, self.apiKey, username, email, password, password]];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] && [[[object valueForKey:@"status"] lowercaseString] isEqual:@"success"]; // validate server reponse  
 }
 
 - (BOOL) followUserWithUsername:(NSString*)username
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_followUserWithUsernameURL, self.apiKey, isUserAuthenticated(), username]];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] && [[[object valueForKey:@"status"] lowercaseString] isEqual:@"success"]; // validate server reponse  
 }
 
 - (BOOL) unfollowUserWithUsername:(NSString*)username
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_unfollowUserWithUsernameURL, self.apiKey, isUserAuthenticated(), username]];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] && [[[object valueForKey:@"status"] lowercaseString] isEqual:@"success"]; // validate server reponse    
 }
 
 - (BOOL) isUserWithUsername:(NSString*)usernameA followingUserWithUsername:(NSString*)usernameB;
 {
   NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:ZT_isUserWithUsernameFollowingUserWithUsernameURL, self.apiKey, isUserAuthenticated(), usernameA, usernameB]];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] 
       && [[[object valueForKey:@"status"] lowercaseString] isEqual:@"success"]
       && [[object valueForKey:@"isfriend"] isEqual:[NSNumber numberWithUnsignedInt:1]]
@@ -620,7 +620,7 @@ static ZTProxy* ZT_defaultProxyInstance = nil;
                       public,
                       pack != nil ? pack : @""];
   NSURL* url = [NSURL URLWithString:urlStr];
-  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obiously don't want to use a cached value
+  id object = [self parseJSONAtURL:url forceNoCache:YES]; // we obviously don't want to use a cached value
   return [object respondsToSelector:@selector(valueForKey:)] && [[[object valueForKey:@"status"] lowercaseString] isEqual:@"success"]; // validate server reponse      
 }
 
